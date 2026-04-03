@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from './hooks/useAuth';
 import SignUp from './components/Auth/SignUp';
 import Login from './components/Auth/Login';
+import ProfileSetup from './components/Profile/ProfileSetup';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 
@@ -37,6 +38,14 @@ function App() {
         <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <Login />} />
 
         {/* Protected routes */}
+        <Route
+          path="/profile-setup"
+          element={
+            <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
+              <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={

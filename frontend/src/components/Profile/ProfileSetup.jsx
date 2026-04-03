@@ -1,0 +1,295 @@
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+
+export default function ProfileSetup() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [step, setStep] = useState(1); // 1: Selfie, 2: Bio, 3: Kids, 4: Preferences
+  const [formData, setFormData] = useState({
+    selfie_url: null,
+    bio: '',
+    location: '',
+    num_kids: '',
+    kids_ages: '',
+    looking_for: 'relationship',
+    interests: [],
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({
+        ...prev,
+        selfie_url: event.target.result,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleInterestToggle = (interest) => {
+    setFormData((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const token = localStorage.getItem('authToken');
+
+      // Step 1: Upload selfie
+      if (step === 1) {
+        if (!formData.selfie_url) {
+          setError('Please upload a selfie');
+          setLoading(false);
+          return;
+        }
+
+        const selfieRes = await fetch(`${API_URL}/profiles/${user.id}/selfie`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ selfie_url: formData.selfie_url }),
+        });
+
+        if (!selfieRes.ok) {
+          const err = await selfieRes.json();
+          throw new Error(err.error);
+        }
+
+        setStep(2);
+      }
+
+      // Step 2-4: Update profile
+      if (step > 1) {
+        const profileRes = await fetch(`${API_URL}/profiles/${user.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            bio: formData.bio,
+            location: formData.location,
+            num_kids: formData.num_kids ? parseInt(formData.num_kids) : null,
+            kids_ages: formData.kids_ages,
+            looking_for: formData.looking_for,
+            interests: formData.interests,
+          }),
+        });
+
+        if (!profileRes.ok) {
+          const err = await profileRes.json();
+          throw new Error(err.error);
+        }
+
+        if (step === 4) {
+          // Profile setup complete
+          navigate('/discover');
+        } else {
+          setStep(step + 1);
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to save profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center px-4">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Complete Your Profile</h1>
+        <p className="text-gray-600 mb-6">Step {step} of 4</p>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Step 1: Selfie */}
+          {step === 1 && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-4">Upload a selfie</label>
+              {formData.selfie_url ? (
+                <div className="mb-4">
+                  <img src={formData.selfie_url} alt="Your selfie" className="w-full rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, selfie_url: null }))}
+                    className="mt-2 text-rose-500 hover:text-rose-600 text-sm"
+                  >
+                    Change photo
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="selfie-input"
+                  />
+                  <label htmlFor="selfie-input" className="cursor-pointer">
+                    <p className="text-3xl mb-2">📸</p>
+                    <p className="text-gray-600">Click to upload or drag and drop</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  </label>
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-4">
+                ✓ We require verified selfies to keep everyone safe
+              </p>
+            </div>
+          )}
+
+          {/* Step 2: Bio & Location */}
+          {step === 2 && (
+            <div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Bio</label>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  placeholder="Tell others about yourself..."
+                  rows="3"
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-gray-700 font-medium mb-2">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  placeholder="City, State"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Kids */}
+          {step === 3 && (
+            <div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">How many kids?</label>
+                <input
+                  type="number"
+                  name="num_kids"
+                  value={formData.num_kids}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-gray-700 font-medium mb-2">Kids' ages (comma separated)</label>
+                <input
+                  type="text"
+                  name="kids_ages"
+                  value={formData.kids_ages}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  placeholder="e.g. 5, 8, 12"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Preferences */}
+          {step === 4 && (
+            <div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">What are you looking for?</label>
+                <select
+                  name="looking_for"
+                  value={formData.looking_for}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                >
+                  <option value="relationship">Long-term relationship</option>
+                  <option value="casual">Casual dating</option>
+                  <option value="friendship">Friendship</option>
+                </select>
+              </div>
+              <div className="mt-4">
+                <label className="block text-gray-700 font-medium mb-2">Interests</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Hiking', 'Cooking', 'Reading', 'Sports', 'Movies', 'Travel', 'Gaming', 'Music'].map(
+                    (interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => handleInterestToggle(interest)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+                          formData.interests.includes(interest)
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {interest}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-4 mt-8">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={() => setStep(step - 1)}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition"
+              >
+                Back
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : step === 4 ? 'Complete' : 'Next'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

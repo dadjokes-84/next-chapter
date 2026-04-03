@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profiles.js';
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/profiles', profileRoutes);
+app.use('/api/profiles', profileRoutes);
 // app.use('/api/matches', matchRoutes);
 // app.use('/api/messages', messageRoutes);
 // app.use('/api/payments', paymentRoutes);
