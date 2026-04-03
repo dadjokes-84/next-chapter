@@ -6,6 +6,7 @@ import Login from './components/Auth/Login';
 import ProfileSetup from './components/Profile/ProfileSetup';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
+import Discover from './pages/Discover';
 
 // Protected route wrapper
 function ProtectedRoute({ children, isAuthenticated, loading }) {
@@ -43,6 +44,14 @@ function App() {
           element={
             <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
               <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/discover"
+          element={
+            <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
+              <Discover />
             </ProtectedRoute>
           }
         />
