@@ -1,23 +1,30 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import SignUp from './components/Auth/SignUp';
+import Login from './components/Auth/Login';
+import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 
-// TODO: Import components
-// import SignUp from './components/Auth/SignUp';
-// import Login from './components/Auth/Login';
-// import Dashboard from './pages/Dashboard';
-// import Discover from './pages/Discover';
+// Protected route wrapper
+function ProtectedRoute({ children, isAuthenticated, loading }) {
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  return isAuthenticated ? children : <Navigate to="/login" />;
+}
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, token, loading: authLoading, getCurrentUser } = useAuth();
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    // TODO: Initialize Supabase and check auth state
-    setLoading(false);
-  }, []);
+    if (token) {
+      getCurrentUser().finally(() => setAppReady(true));
+    } else {
+      setAppReady(true);
+    }
+  }, [token]);
 
-  if (loading) {
+  if (!appReady) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
@@ -25,22 +32,19 @@ function App() {
     <Router>
       <Routes>
         {/* Public routes */}
-        {!user && (
-          <>
-            {/* <Route path="/signup" element={<SignUp />} /> */}
-            {/* <Route path="/login" element={<Login />} /> */}
-            <Route path="/" element={<div>Welcome to Next-Chapter</div>} />
-          </>
-        )}
+        <Route path="/" element={token ? <Navigate to="/dashboard" /> : <Home />} />
+        <Route path="/signup" element={token ? <Navigate to="/dashboard" /> : <SignUp />} />
+        <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <Login />} />
 
         {/* Protected routes */}
-        {user && (
-          <>
-            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-            {/* <Route path="/discover" element={<Discover />} /> */}
-            <Route path="/" element={<div>Dashboard (coming soon)</div>} />
-          </>
-        )}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
+              <Dashboard user={user} />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -16,15 +17,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// TODO: Import and use route handlers
-// import authRoutes from './routes/auth.js';
-// import profileRoutes from './routes/profiles.js';
-// import matchRoutes from './routes/matches.js';
-// import messageRoutes from './routes/messages.js';
-// import paymentRoutes from './routes/payments.js';
-
-// Routes (to be implemented)
-// app.use('/api/auth', authRoutes);
+// Routes
+app.use('/api/auth', authRoutes);
 // app.use('/api/profiles', profileRoutes);
 // app.use('/api/matches', matchRoutes);
 // app.use('/api/messages', messageRoutes);
