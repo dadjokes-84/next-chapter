@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import PhotoGallery from '../PhotoGallery';
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState(1); // 1: Selfie, 2: Bio, 3: Kids, 4: Preferences
+  const [step, setStep] = useState(1); // 1: Selfie, 2: Photos, 3: Bio, 4: Kids, 5: Preferences
   const [formData, setFormData] = useState({
     selfie_url: null,
+    photo_urls: [],
     bio: '',
     location: '',
     num_kids: '',
     kids_ages: '',
+    kids_genders: '',
     looking_for: 'relationship',
     interests: [],
   });
@@ -108,7 +111,7 @@ export default function ProfileSetup() {
           throw new Error(err.error);
         }
 
-        if (step === 4) {
+        if (step === 5) {
           // Profile setup complete
           navigate('/discover');
         } else {
@@ -126,7 +129,7 @@ export default function ProfileSetup() {
     <div className="min-h-screen bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Complete Your Profile</h1>
-        <p className="text-gray-600 mb-6">Step {step} of 4</p>
+        <p className="text-gray-600 mb-6">Step {step} of 5</p>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -166,14 +169,62 @@ export default function ProfileSetup() {
                   </label>
                 </div>
               )}
+              <p className="text-xs text-gray-500 mt-4">✓ We require verified selfies to keep everyone safe</p>
+            </div>
+          )}
+
+          {/* Step 2: Photos */}
+          {step === 2 && (
+            <div>
+              <PhotoGallery
+                userId={user.id}
+                token={localStorage.getItem('authToken')}
+                photos={formData.photo_urls}
+                onPhotosChange={(urls) => setFormData((prev) => ({ ...prev, photo_urls: urls }))}
+              />
+              <p className="text-xs text-gray-500 mt-4">✓ First photo will be shown first in Discover (drag to reorder)</p>
+            </div>
+          )}
+
+          {/* Step 3: Bio */}
+          {step === 3 && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-4">Upload a selfie</label>
+              {formData.selfie_url ? (
+                <div className="mb-4">
+                  <img src={formData.selfie_url} alt="Your selfie" className="w-full rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, selfie_url: null }))}
+                    className="mt-2 text-rose-500 hover:text-rose-600 text-sm"
+                  >
+                    Change photo
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="selfie-input"
+                  />
+                  <label htmlFor="selfie-input" className="cursor-pointer">
+                    <p className="text-3xl mb-2">📸</p>
+                    <p className="text-gray-600">Click to upload or drag and drop</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  </label>
+                </div>
+              )}
               <p className="text-xs text-gray-500 mt-4">
                 ✓ We require verified selfies to keep everyone safe
               </p>
             </div>
           )}
 
-          {/* Step 2: Bio & Location */}
-          {step === 2 && (
+          {/* Step 4: Kids */}
+          {step === 4 && (
             <div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">Bio</label>
@@ -200,8 +251,8 @@ export default function ProfileSetup() {
             </div>
           )}
 
-          {/* Step 3: Kids */}
-          {step === 3 && (
+          {/* Step 5: Preferences */}
+          {step === 5 && (
             <div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">How many kids?</label>
@@ -285,7 +336,7 @@ export default function ProfileSetup() {
               disabled={loading}
               className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
             >
-              {loading ? 'Saving...' : step === 4 ? 'Complete' : 'Next'}
+              {loading ? 'Saving...' : step === 5 ? 'Complete' : 'Next'}
             </button>
           </div>
         </form>

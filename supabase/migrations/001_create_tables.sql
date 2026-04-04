@@ -21,9 +21,10 @@ CREATE TABLE IF NOT EXISTS profiles (
   user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   num_kids INT,
   kids_ages TEXT, -- "5,7,10"
+  kids_genders TEXT, -- "M,F,M" (optional)
   looking_for VARCHAR(50), -- "relationship", "casual", "friendship"
   interests TEXT[], -- ["cooking", "hiking", "reading"]
-  photo_url VARCHAR(500),
+  photo_urls TEXT[], -- array of photo URLs from storage
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

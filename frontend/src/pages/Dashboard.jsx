@@ -203,7 +203,7 @@ export default function Dashboard({ user }) {
             ❤️ Discover
           </button>
           <button
-            onClick={() => navigate('/profile-setup')}
+            onClick={() => navigate('/edit-profile')}
             className="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-2xl transition shadow border border-gray-200"
           >
             ✏️ Edit Profile

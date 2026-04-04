@@ -54,7 +54,7 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { bio, location, num_kids, kids_ages, looking_for, interests, photo_url } = req.body;
+    const { bio, location, num_kids, kids_ages, kids_genders, looking_for, interests, photo_url } = req.body;
 
     // Verify user is updating their own profile
     if (req.userId !== userId) {
@@ -82,6 +82,7 @@ export const updateProfile = async (req, res) => {
       user_id: userId,
       num_kids: num_kids || null,
       kids_ages: kids_ages || null,
+      kids_genders: kids_genders || null,
       looking_for: looking_for || null,
       interests: interests || null,
       photo_url: photo_url || null,
