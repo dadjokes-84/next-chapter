@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profiles.js';
 import discoverRoutes from './routes/discover.js';
+import messageRoutes from './routes/messages.js';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/discover', discoverRoutes);
-// app.use('/api/messages', messageRoutes);
+app.use('/api/messages', messageRoutes);
 // app.use('/api/messages', messageRoutes);
 // app.use('/api/payments', paymentRoutes);
 

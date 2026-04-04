@@ -7,6 +7,7 @@ import ProfileSetup from './components/Profile/ProfileSetup';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Discover from './pages/Discover';
+import Messages from './pages/Messages';
 
 // Protected route wrapper
 function ProtectedRoute({ children, isAuthenticated, loading }) {
@@ -52,6 +53,14 @@ function App() {
           element={
             <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
               <Discover />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/:matchId"
+          element={
+            <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
+              <Messages />
             </ProtectedRoute>
           }
         />
