@@ -1,11 +1,23 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profiles.js';
+import preferencesRoutes from './routes/preferences.js';
+import matchesRoutes from './routes/matches.js';
+import messagesRoutes from './routes/messages.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Supabase client
+export const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 // Middleware
 app.use(cors());
@@ -16,18 +28,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// TODO: Import and use route handlers
-// import authRoutes from './routes/auth.js';
-// import profileRoutes from './routes/profiles.js';
-// import matchRoutes from './routes/matches.js';
-// import messageRoutes from './routes/messages.js';
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/preferences', preferencesRoutes);
+app.use('/api/matches', matchesRoutes);
+app.use('/api/messages', messagesRoutes);
+// TODO: Implement remaining routes
 // import paymentRoutes from './routes/payments.js';
-
-// Routes (to be implemented)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/profiles', profileRoutes);
-// app.use('/api/matches', matchRoutes);
-// app.use('/api/messages', messageRoutes);
 // app.use('/api/payments', paymentRoutes);
 
 // Error handling
