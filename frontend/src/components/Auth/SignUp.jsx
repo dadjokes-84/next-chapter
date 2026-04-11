@@ -52,8 +52,8 @@ export default function SignUp() {
         age: formData.age ? parseInt(formData.age) : null,
       });
 
-      // Redirect to profile creation
-      navigate('/profile-setup');
+      // Redirect to welcome/onboarding
+      navigate('/welcome');
     } catch (err) {
       setError(err.message || 'Signup failed');
     } finally {

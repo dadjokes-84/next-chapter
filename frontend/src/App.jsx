@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Discover from './pages/Discover';
 import Messages from './pages/Messages';
 import EditProfile from './pages/EditProfile';
+import Welcome from './pages/Welcome';
 
 // Protected route wrapper
 function ProtectedRoute({ children, isAuthenticated, loading }) {
@@ -41,6 +42,14 @@ function App() {
         <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <Login />} />
 
         {/* Protected routes */}
+        <Route
+          path="/welcome"
+          element={
+            <ProtectedRoute isAuthenticated={!!token} loading={authLoading}>
+              <Welcome />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile-setup"
           element={

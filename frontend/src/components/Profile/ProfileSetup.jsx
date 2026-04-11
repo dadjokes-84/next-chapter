@@ -1,48 +1,42 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import PhotoGallery from '../PhotoGallery';
+import PhotoGallery from './PhotoGallery';
+
+const TOTAL_STEPS = 5;
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState(1); // 1: Selfie, 2: Photos, 3: Bio, 4: Kids, 5: Preferences
+  const [step, setStep] = useState(1); // 1: Selfie, 2: Bio, 3: Kids, 4: Preferences, 5: Photos
   const [formData, setFormData] = useState({
     selfie_url: null,
-    photo_urls: [],
     bio: '',
     location: '',
     num_kids: '',
     kids_ages: '',
-    kids_genders: '',
     looking_for: 'relationship',
     interests: [],
+    photo_urls: [],
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = (event) => {
-      setFormData((prev) => ({
-        ...prev,
-        selfie_url: event.target.result,
-      }));
+      setFormData((prev) => ({ ...prev, selfie_url: event.target.result }));
     };
     reader.readAsDataURL(file);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleInterestToggle = (interest) => {
@@ -60,10 +54,9 @@ export default function ProfileSetup() {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
       const token = localStorage.getItem('authToken');
 
-      // Step 1: Upload selfie
+      // ── Step 1: Selfie ──────────────────────────────────
       if (step === 1) {
         if (!formData.selfie_url) {
           setError('Please upload a selfie');
@@ -88,8 +81,8 @@ export default function ProfileSetup() {
         setStep(2);
       }
 
-      // Step 2-4: Update profile
-      if (step > 1) {
+      // ── Steps 2–4: Profile fields ───────────────────────
+      else if (step >= 2 && step <= 4) {
         const profileRes = await fetch(`${API_URL}/profiles/${user.id}`, {
           method: 'PUT',
           headers: {
@@ -111,12 +104,13 @@ export default function ProfileSetup() {
           throw new Error(err.error);
         }
 
-        if (step === 5) {
-          // Profile setup complete
-          navigate('/discover');
-        } else {
-          setStep(step + 1);
-        }
+        setStep(step + 1);
+      }
+
+      // ── Step 5: Photos (done — navigate) ────────────────
+      else if (step === 5) {
+        // Photos are saved incrementally via PhotoGallery; just finish
+        navigate('/discover');
       }
     } catch (err) {
       setError(err.message || 'Failed to save profile');
@@ -129,16 +123,30 @@ export default function ProfileSetup() {
     <div className="min-h-screen bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Complete Your Profile</h1>
-        <p className="text-gray-600 mb-6">Step {step} of 5</p>
+
+        {/* Progress bar */}
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Step {step} of {TOTAL_STEPS}</span>
+            <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-rose-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+            />
+          </div>
+        </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Step 1: Selfie */}
+
+          {/* ── Step 1: Selfie ──────────────────────────── */}
           {step === 1 && (
             <div>
               <label className="block text-gray-700 font-medium mb-4">Upload a selfie</label>
@@ -169,62 +177,20 @@ export default function ProfileSetup() {
                   </label>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-4">✓ We require verified selfies to keep everyone safe</p>
+              <div className="mt-4 space-y-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+                <p className="font-semibold text-blue-900">📸 Selfie tips:</p>
+                <ul className="space-y-1 text-blue-800">
+                  <li>✓ Good lighting (natural or soft indoor)</li>
+                  <li>✓ Face clearly visible, no sunglasses</li>
+                  <li>✓ Recent photo (taken in last 3 months)</li>
+                  <li>✓ Just you — no other people or heavy filters</li>
+                </ul>
+              </div>
             </div>
           )}
 
-          {/* Step 2: Photos */}
+          {/* ── Step 2: Bio & Location ──────────────────── */}
           {step === 2 && (
-            <div>
-              <PhotoGallery
-                userId={user.id}
-                token={localStorage.getItem('authToken')}
-                photos={formData.photo_urls}
-                onPhotosChange={(urls) => setFormData((prev) => ({ ...prev, photo_urls: urls }))}
-              />
-              <p className="text-xs text-gray-500 mt-4">✓ First photo will be shown first in Discover (drag to reorder)</p>
-            </div>
-          )}
-
-          {/* Step 3: Bio */}
-          {step === 3 && (
-            <div>
-              <label className="block text-gray-700 font-medium mb-4">Upload a selfie</label>
-              {formData.selfie_url ? (
-                <div className="mb-4">
-                  <img src={formData.selfie_url} alt="Your selfie" className="w-full rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, selfie_url: null }))}
-                    className="mt-2 text-rose-500 hover:text-rose-600 text-sm"
-                  >
-                    Change photo
-                  </button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="selfie-input"
-                  />
-                  <label htmlFor="selfie-input" className="cursor-pointer">
-                    <p className="text-3xl mb-2">📸</p>
-                    <p className="text-gray-600">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                  </label>
-                </div>
-              )}
-              <p className="text-xs text-gray-500 mt-4">
-                ✓ We require verified selfies to keep everyone safe
-              </p>
-            </div>
-          )}
-
-          {/* Step 4: Kids */}
-          {step === 4 && (
             <div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">Bio</label>
@@ -251,8 +217,8 @@ export default function ProfileSetup() {
             </div>
           )}
 
-          {/* Step 5: Preferences */}
-          {step === 5 && (
+          {/* ── Step 3: Kids ────────────────────────────── */}
+          {step === 3 && (
             <div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">How many kids?</label>
@@ -280,7 +246,7 @@ export default function ProfileSetup() {
             </div>
           )}
 
-          {/* Step 4: Preferences */}
+          {/* ── Step 4: Preferences ─────────────────────── */}
           {step === 4 && (
             <div>
               <div>
@@ -320,7 +286,23 @@ export default function ProfileSetup() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          {/* ── Step 5: Photos ──────────────────────────── */}
+          {step === 5 && (
+            <div>
+              <p className="text-gray-600 text-sm mb-4">
+                Add up to 5 photos to your profile. Your first photo is shown in Discover.
+              </p>
+              <PhotoGallery
+                userId={user?.id}
+                initialPhotos={formData.photo_urls}
+                onPhotosChange={(urls) =>
+                  setFormData((prev) => ({ ...prev, photo_urls: urls }))
+                }
+              />
+            </div>
+          )}
+
+          {/* ── Navigation buttons ──────────────────────── */}
           <div className="flex gap-4 mt-8">
             {step > 1 && (
               <button
@@ -336,9 +318,23 @@ export default function ProfileSetup() {
               disabled={loading}
               className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
             >
-              {loading ? 'Saving...' : step === 5 ? 'Complete' : 'Next'}
+              {loading
+                ? 'Saving...'
+                : step === TOTAL_STEPS
+                ? 'Finish'
+                : 'Next'}
             </button>
           </div>
+
+          {step === TOTAL_STEPS && (
+            <button
+              type="button"
+              onClick={() => navigate('/discover')}
+              className="w-full text-center text-sm text-gray-400 hover:text-gray-600 mt-2"
+            >
+              Skip for now
+            </button>
+          )}
         </form>
       </div>
     </div>
