@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useCallback } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -91,3 +92,15 @@ export function useAuth() {
     isAuthenticated: !!token,
   };
 }
+=======
+import { useContext } from 'react';
+import AuthContext from '../context/AuthContext';
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+>>>>>>> b3ec451c97525c80f8638f94cc7a45f71f659054
